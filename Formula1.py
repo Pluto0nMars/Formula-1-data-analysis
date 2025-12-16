@@ -82,20 +82,70 @@ def search_driver_team(conn):
         else:
             for d in rows:
                 print(f" {d[0]}: {d[2]} {d[3]} ({d[4]})")
-        
+            
     elif choice == 't':
-        pass
+        team = input("Enter team name (EX -'Red Bull'): ")
+        cursor.execute("""
+                        SELECT name, nationality, url
+                        FROM constructors
+                        WHERE name LIKE ?
+                        ORDER BY constructorRef ASC
+                            """, [team])
+        rows = cursor.fetchall()
+        if len(rows) == 0:
+            print("No Team Found!")
+        else:
+            for t in rows:
+                print(f" {t[0]} ({t[1]}) Team wiki: {t[2]}")
     else:
         print("Invalid choice")
 
 
+def top_ten_constructors(conn):
+    print("")
+    cursor = conn.cursor()
 
+    cursor.execute(""" 
+                SELECT name, SUM(wins) as total_wins, sum(points) as total_points               FROM constructors
+                JOIN constructor_standings 
+                ON constructors.constructorId = constructor_standings.constructorId
+                GROUP BY name
+                ORDER BY total_wins desc
+                LIMIT 10
+            """)
+    rows = cursor.fetchall()
+    i = 1
+    
+    for r in rows:
+        print(f"{i}. {r[0]}  wins: {r[1]}  {r[2]:.1f}")
+        i += 1
+
+def top_20_gp(conn):
+    print("")
+    cursor = conn.cursor()
+
+    cursor.execute(""" 
+                SELECT name, count(*) AS total_gp_wins               
+                FROM constructors
+                JOIN results
+                ON constructors.constructorId = results.constructorId
+                GROUP BY name
+                ORDER BY total_gp_wins desc
+                LIMIT 20
+            """)
+    rows = cursor.fetchall()
+    i = 1
+    
+    for r in rows:
+        print(f"{i}. {r[0]}   race wins: {r[1]}")
+        i += 1
 
 if __name__ == "__main__":
-   import_csv()
+   import_csv() 
    #data = fetch_race_results(2024)
    #print(data)
-
-   search_driver_team(conn)
+   #top_ten_constructors(conn)
+   top_20_gp(conn)
+   #search_driver_team(conn)
 
    conn.close()
