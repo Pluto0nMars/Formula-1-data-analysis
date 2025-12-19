@@ -140,12 +140,66 @@ def top_20_gp(conn):
         print(f"{i}. {r[0]}   race wins: {r[1]}")
         i += 1
 
+def most_driver_championships(conn):
+    print("")
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT drivers.forename, drivers.surname, COUNT(*) AS championships
+        FROM driver_standings
+        JOIN RACES ON driver_standings.raceId = races.raceId
+        JOIN DRIVERS ON driver_standings.driverId = drivers.driverId
+        WHERE driver_standings.position = 1
+        AND races.round = (
+            SELECT MAX(round) 
+            FROM races r2 
+            WHERE r2.year = races.year
+        )
+        GROUP BY drivers.driverId
+        ORDER BY championships DESC
+        LIMIT 20
+        """)
+    
+    rows = cursor.fetchall()
+
+    for i, r in enumerate(rows, 1):
+        print(f"{i}. {r[0]} {r[1]} {r[2]} championships")
+    
+    print("")
+
+def most_constructor_championships(conn):
+    print("")
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT constructors.name, COUNT(*) AS CHAMPIONSHIPS
+        FROM constructor_standings
+        JOIN races ON constructor_standings.raceId = races.raceId
+        JOIN constructors ON constructor_standings.constructorId = constructors.constructorId
+        WHERE constructor_standings.position = 1
+        AND races.round = (
+            SELECT MAX(round) 
+            FROM races r2 
+            WHERE r2.year = races.year
+        )
+        GROUP BY constructors.constructorId
+        ORDER BY championships DESC
+        LIMIT 20
+        
+    """)
+
+    rows = cursor.fetchall()
+    for i, r in enumerate(rows, 1):
+        print(f"{i}. {r[0]} {r[1]} championships")
+    
+    print("")
+    
 if __name__ == "__main__":
    import_csv() 
    #data = fetch_race_results(2024)
    #print(data)
    #top_ten_constructors(conn)
-   top_20_gp(conn)
+   #top_20_gp(conn)
    #search_driver_team(conn)
-
+   most_driver_championships(conn)
+   most_constructor_championships(conn)
    conn.close()
+
