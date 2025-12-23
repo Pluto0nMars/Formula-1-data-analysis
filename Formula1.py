@@ -2,7 +2,7 @@ import sqlite3
 import pandas as pd
 import requests 
 import matplotlib.pyplot as plt
-
+import f12025
 conn = sqlite3.connect('f1_data.db')
 
 def import_csv():
@@ -318,8 +318,50 @@ def fast_pit_stop(conn):
             avg_seconds = r[2] / 1000
             print(f"{r[0]} {r[1]} : {avg_seconds:.3f} seconds ({r[3]} stops)")
 
+def most_laps_led(conn):
+    cursor = conn.cursor()
+
+    year = input("Enter year (or press Enter for all-time): ")
+
+    if year:
+        cursor.execute("""
+        SELECT drivers.forename, drivers.surname, COUNT(*) AS laps_led
+        FROM lap_times
+        JOIN drivers ON lap_times.driverId = drivers.driverId
+        JOIN races ON lap_times.raceId = races.raceId 
+        WHERE lap_times.position = 1 AND races.year = ?
+        GROUP BY  drivers.surname
+        ORDER BY laps_led DESC
+        LIMIT 10
+    """, [year])
+    else:
+        cursor.execute("""
+        SELECT drivers.forename, drivers.surname, COUNT(*) AS laps_led
+        FROM lap_times
+        JOIN drivers ON lap_times.driverId = drivers.driverId
+        WHERE lap_times.position = 1
+        GROUP BY  drivers.surname
+        ORDER BY laps_led DESC
+        LIMIT 10 
+        """)
+
+    rows = cursor.fetchall()
+    if len(rows) == 0:
+        print("No data found! :( ")
+    else:
+        for i, r in enumerate(rows, 1):
+            print(f"{i}. {r[0]} {r[1]} : {r[2]} laps led")
+    
+
+
+    
+
+
+
 if __name__ == "__main__":
    import_csv() 
+   f12025.add_2025_races(conn)
+   f12025.add_2025_results(conn)
    #data = fetch_race_results(2024)
    #print(data)
    #top_ten_constructors(conn)
@@ -327,7 +369,7 @@ if __name__ == "__main__":
    #search_driver_team(conn)
    #most_driver_championships(conn)
    #most_constructor_championships(conn)
-   fast_pit_stop(conn)
+   #fast_pit_stop(conn)
    #two_drivers_comparison(conn)
-
    #season_points(conn)   
+   #most_laps_led(conn)
