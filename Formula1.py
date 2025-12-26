@@ -353,6 +353,54 @@ def most_laps_led(conn):
             print(f"{i}. {r[0]} {r[1]} : {r[2]} laps led")
     
 
+def dnf_analysis(conn):
+    cursor = conn.cursor()
+    year = input("Enter year: ")
+
+    print(f"\n=== Drivers with Most DNFs in {year} ===\n")
+    cursor.execute("""
+        SELECT drivers.forename, drivers.surname, COUNT(*) AS dnf_count
+        FROM results
+        JOIN drivers ON results.driverId = drivers.driverId
+        JOIN status ON results.statusId = status.statusId 
+        JOIN races ON  results.raceId =  races.raceId
+        WHERE status.status != 'Finished'
+        AND status.status NOT LIKE '%Lap%'
+        AND races.year LIKE ?
+        GROUP BY results.driverId
+        ORDER BY dnf_count DESC
+    """, [year])
+
+    rows = cursor.fetchall()
+
+    if len(rows) == 0:
+        print("No data found! :( ")
+    else:
+        for i,r in enumerate(rows, 1):
+            print(f"{i}. {r[0]} {r[1]}: {r[2]} DNFs")
+    
+    print(f"\n=== Constructors with Most DNFs in {year} ===\n")
+    cursor.execute("""
+        SELECT constructors.constructorRef,  COUNT(*) AS dnf_count
+        FROM results
+        JOIN constructors ON results.constructorId = constructors.constructorId
+        JOIN status ON results.statusId = status.statusId 
+        JOIN races ON  results.raceId =  races.raceId
+        WHERE status.status != 'Finished'
+        AND status.status NOT LIKE '%Lap%'
+        AND races.year LIKE ?
+        GROUP BY results.constructorId
+        ORDER BY dnf_count DESC
+    """, [year])
+
+    rows = cursor.fetchall()
+    if len(rows) == 0:
+        print("No data found! :( ")
+    else:
+        for i,r in enumerate(rows, 1):
+            print(f"{i}. {r[0]}: {r[1]} DNFs")
+
+
 
     
 
@@ -360,8 +408,8 @@ def most_laps_led(conn):
 
 if __name__ == "__main__":
    import_csv() 
-   f12025.add_2025_races(conn)
-   f12025.add_2025_results(conn)
+#    f12025.add_2025_races(conn)
+#    f12025.add_2025_results(conn)
    #data = fetch_race_results(2024)
    #print(data)
    #top_ten_constructors(conn)
@@ -373,3 +421,4 @@ if __name__ == "__main__":
    #two_drivers_comparison(conn)
    #season_points(conn)   
    #most_laps_led(conn)
+   dnf_analysis(conn)
