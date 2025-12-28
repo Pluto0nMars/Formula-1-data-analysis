@@ -400,8 +400,31 @@ def dnf_analysis(conn):
         for i,r in enumerate(rows, 1):
             print(f"{i}. {r[0]}: {r[1]} DNFs")
 
+def optimal_pit_window(conn):
+    year = input("Enter year: ")
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT pit_stops.lap, COUNT(*) AS num_wins
+        FROM pit_stops
+        JOIN results ON pit_stops.raceId = results.raceId
+                   AND pit_stops.driverId = results.driverId
+        JOIN races ON  pit_stops.raceId = races.raceId
+        WHERE results.position = 1
+        AND races.year = ?
+        GROUP BY pit_stops.lap
+        ORDER BY num_wins DESC
+    """, [year])
+
+    rows = cursor.fetchall()
 
 
+    print(f"\n=== Most Common Pit Stop Laps for Race Winners in {year} ===\n")
+    if len(rows) == 0:
+        print("No data found! :( ")
+    else:
+        for r in rows:
+            print(f"{r[0]}: {r[1]} WINS")
     
 
 
@@ -421,4 +444,6 @@ if __name__ == "__main__":
    #two_drivers_comparison(conn)
    #season_points(conn)   
    #most_laps_led(conn)
-   dnf_analysis(conn)
+    #dnf_analysis(conn)
+   optimal_pit_window(conn)
+   
